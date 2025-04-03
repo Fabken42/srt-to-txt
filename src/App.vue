@@ -75,7 +75,7 @@ export default {
         reader.onload = (e) => {
           this.processSrt(e.target.result);
         };
-        reader.readAsText(file); 
+        reader.readAsText(file, 'utf-8'); 
         
         this.fileName = file.name;
         this.startLine = 1;

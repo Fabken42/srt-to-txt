@@ -68,49 +68,55 @@ export default {
     }
   },
   methods: {
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file && file.name.endsWith('.srt')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.processSrt(e.target.result);
-        };
-        reader.readAsText(file, 'utf-8'); 
-        
-        this.fileName = file.name;
-        this.startLine = 1;
-        this.numLines = 80;
-      } else {
-        this.toast.error("Por favor, selecione um arquivo .srt válido.");
+  handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file && file.name.endsWith('.srt')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        console.log("Conteúdo bruto do arquivo:", e.target.result); // Log 1
+        this.processSrt(e.target.result);
+      };
+      reader.onerror = (e) => {
+        console.error("Erro na leitura do arquivo:", e.target.error); // Log 2
+      };
+      reader.readAsText(file, 'Windows-1252'); // Experimente também 'ISO-8859-1' se não funcionar
+      
+      this.fileName = file.name;
+      this.startLine = 1;
+      this.numLines = 80;
+    } else {
+      this.toast.error("Por favor, selecione um arquivo .srt válido.");
+    }
+  },
+  processSrt(content) {
+    const lines = content.split('\n');
+    const cleanedLines = [];
+    let skipNext = false;
+    
+    lines.forEach(line => {
+      if (line.match(/^\d+$/)) {
+        skipNext = true;
+      } else if (line.match(/^\d{2}:\d{2}:\d{2},\d{3}/)) {
+        skipNext = false;
+      } else if (line.trim() !== "" && !skipNext) {
+        cleanedLines.push(line.trim());
       }
-    },
-    processSrt(content) {
-      const lines = content.split('\n');
-      const cleanedLines = [];
-      let skipNext = false;
-      
-      lines.forEach(line => {
-        if (line.match(/^\d+$/)) {
-          skipNext = true;
-        } else if (line.match(/^\d{2}:\d{2}:\d{2},\d{3}/)) {
-          skipNext = false;
-        } else if (line.trim() !== "" && !skipNext) {
-          cleanedLines.push(line.trim());
-        }
-      });
-      
-      this.dialogues = cleanedLines;
-    },
-    downloadTxt() {
-      const content = this.dialogues.map((line, index) => `${index + 1}. ${line}`).join('\n');
-      const blob = new Blob([content], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'dialogos.txt';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    },
+    });
+
+    console.log("Linhas processadas:", cleanedLines); // Log 3
+    this.dialogues = cleanedLines;
+  },
+  downloadTxt() {
+    const content = this.dialogues.map((line, index) => `${index + 1}. ${line}`).join('\n');
+    console.log("Conteúdo antes do Blob:", content); // Log 4
+    const blob = new Blob(["\uFEFF" + content], { type: 'text/plain;charset=utf-8' }); // BOM + charset explícito
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'dialogos.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  },
     copyToClipboard() {
       if (this.startLine && this.numLines) {
         const start = this.startLine - 1;

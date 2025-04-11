@@ -6,7 +6,7 @@ import 'vue-toastification/dist/index.css';
 const app = createApp(App);
 
 app.use(Toast, {
-  position: 'bottom-right', // Posição do toast
+  position: 'bottom-left', // Posição do toast
   timeout: 2000,         // Duração do toast (1s)
 });
 
